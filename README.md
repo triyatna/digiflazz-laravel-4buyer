@@ -45,6 +45,7 @@ DIGIFLAZZ_WEBHOOK_SECRET=masukkan_secret_webhook_anda
 ```
 
 > **Penting**: Pastikan IP server Anda didaftarkan di [panel Digiflazz](https://member.digiflazz.com/buyer-area/connection/api) bagian _Atur Koneksi > API_.
+
 > **Informasi**: Dapatkan informasi Webhook Secret dan tambahkan url payload di [panel Digiflazz](https://member.digiflazz.com/buyer-area/connection/api) bagian _Atur Koneksi > API_ > Atur > Webhook.
 
 ---
