@@ -1,0 +1,54 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "triyatna/digiflazz-laravel-4buyer",
+    "description": "Unofficial laravel package for integrating Digiflazz API (Buyer)",
+    "keywords": [
+        "digiflazz",
+        "laravel",
+        "api",
+        "payment",
+        "php",
+        "topup",
+        "digiflazz api",
+        "digiflazz laravel",
+        "digiflazz buyer",
+        "digiflazz api buyer",
+        "digiflazz laravel buyer",
+        "service"
+    ],
+    "type": "library",
+    "homepage": "https://github.com/triyatna/digiflazz-laravel-4buyer",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tri Yatna",
+            "email": "triyatna.dev@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/contracts": "^11.0 || ^12.0",
+        "illuminate/http": "^11.0 || ^12.0",
+        "illuminate/support": "^11.0 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Triyatna\\Digiflazz\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Triyatna\\Digiflazz\\DigiflazzServiceProvider"
+            ],
+            "aliases": {
+                "Digiflazz": "Triyatna\\Digiflazz\\Digiflazz"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
