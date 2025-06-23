@@ -15,9 +15,9 @@ class Client
             ->acceptJson()
             ->post($this->baseUrl . $endpoint, $payload);
 
-        if ($response->failed()) {
-            throw new DigiflazzException("HTTP Error: " . $response->status());
-        }
+        // if ($response->failed()) {
+        //     throw new DigiflazzException("HTTP Error: " . $response->status());
+        // }
 
         return new ResponseHandler($response);
     }
