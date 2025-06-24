@@ -46,7 +46,7 @@ DIGIFLAZZ_WEBHOOK_SECRET=masukkan_secret_webhook_anda
 
 > **Penting**: Pastikan IP server Anda didaftarkan di [panel Digiflazz](https://member.digiflazz.com/buyer-area/connection/api) bagian _Atur Koneksi > API_.
 
-> **Informasi**: Informasi Webhook dan tambahkan url payload di [panel Digiflazz](https://member.digiflazz.com/buyer-area/connection/api) bagian _Atur Koneksi > API_ > Atur > Webhook.
+> **Info**: Informasi Webhook dan tambahkan url payload di [panel Digiflazz](https://member.digiflazz.com/buyer-area/connection/api) bagian _Atur Koneksi > API_ > Atur > Webhook.
 
 ---
 
@@ -132,17 +132,21 @@ if ($response->isSuccess()) {
 
 ### 3. Transaksi
 
+> **info:** Tambahkan `true` diakhir untuk mode testing, contoh: `$response = Digiflazz::createPrepaidTransaction('tsel5', '081234567890', $refId, true);`.
+
 #### a. Prabayar
 
 ```php
 $refId = 'TRX-' . Str::uuid();
 
-$response = Digiflazz::createPrepaidTransaction('tsel5', '081234567890', $refId, true);
+$response = Digiflazz::createPrepaidTransaction('tsel5', '081234567890', $refId);
 
 if ($response->isSuccess()) {
     // sukses
 }
 ```
+
+> **info:** Khusus transaksi prabayar, jika ingin menambahkan opsi `max_price`, `cb_url`, `allow_dot`, gunakan fitur setting dengan data array. contoh: `Digiflazz::createPrepaidTransaction('PLNCEKNAMA', $data, 'TRX221221143', ['max_price' => 6]);`
 
 #### b. Pascabayar
 
