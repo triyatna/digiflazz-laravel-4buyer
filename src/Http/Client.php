@@ -9,15 +9,29 @@ class Client
 {
     public function __construct(protected string $baseUrl) {}
 
+    /**
+     * Mengirim request POST ke endpoint Digiflazz.
+     *
+     * @param string $endpoint
+     * @param array $payload
+     * @return ResponseHandler
+     * @throws DigiflazzException
+     */
     public function post(string $endpoint, array $payload = []): ResponseHandler
     {
         $response = Http::withHeaders(['Content-Type' => 'application/json'])
             ->acceptJson()
             ->post($this->baseUrl . $endpoint, $payload);
 
-        if ($response->failed()) {
-            throw new DigiflazzException("HTTP Error: " . $response->status());
+        if ($response->serverError()) {
+            throw new DigiflazzException(
+                "Digiflazz Server Error: " . $response->status(),
+                $response->status()
+            );
         }
+        // if ($response->failed()) {
+        //     throw new DigiflazzException("HTTP Error: " . $response->status());
+        // }
 
         return new ResponseHandler($response);
     }
