@@ -98,7 +98,9 @@ A modern, safe, and feature‑rich **Digiflazz Buyer API** client for **Laravel*
 ```bash
 composer require triyatna/digiflazz-laravel-4buyer
 php artisan vendor:publish --tag=digiflazz-config
-php artisan digiflazz:install-env
+// use the `--force` flag if it already exists (old version)
+
+php artisan digiflazz:install
 ```
 
 ---
