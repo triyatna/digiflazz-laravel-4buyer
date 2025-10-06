@@ -1,73 +1,112 @@
-
 # digiflazz-laravel-4buyer (v2)
 
-A modern, safe, and feature‑rich **Digiflazz Buyer API** client for **Laravel 8 → 12**. Built for production: fast defaults, clear error semantics, DTOs, webhook verification, CI + tests.
+A modern, safe, and feature‑rich **Digiflazz Buyer API** client for **Laravel** Library.
 
 ---
 
 ## Table of Contents
+
 - [Introduction](#introduction)
 - [Features](#features)
 - [Why This Library](#why-this-library)
+- [Comparison with v1](#comparison-with-v1)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Environment Keys](#environment-keys)
-- [Security Considerations](#security-considerations)
-- [Response Codes → Exceptions](#response-codes--exceptions)
+- [Environment Variables](#environment-variables)
 - [Usage](#usage)
   - [Check Balance](#check-balance)
-  - [Price List (Prepaid/Pasca)](#price-list-prepaidpasca)
+  - [Price List](#price-list)
   - [Deposit](#deposit)
   - [Prepaid Topup](#prepaid-topup)
-  - [Postpaid Inquiry](#postpaid-inquiry)
-  - [Postpaid Payment](#postpaid-payment)
-  - [Postpaid Status](#postpaid-status)
+  - [Postpaid — Inquiry](#postpaid--inquiry)
+  - [Postpaid — Payment](#postpaid--payment)
+  - [Postpaid — Status](#postpaid--status)
   - [PLN Inquiry](#pln-inquiry)
-- [Webhook](#webhook)
-- [DTOs](#dtos)
-- [Caching & Performance](#caching--performance)
-- [Testing & CI](#testing--ci)
-- [Troubleshooting](#troubleshooting)
-- [Versioning & Support Matrix](#versioning--support-matrix)
-- [Sources](#sources)
+  - [Webhook Verification (Validator + Middleware)](#webhook-verification-validator--middleware)
+  - [DTOs](#dtos)
+- [Response Codes & Exceptions](#response-codes--exceptions)
+- [Advanced Usage](#advanced-usage)
+  - [Flexible Calling Styles](#flexible-calling-styles)
+  - [Dependency Injection (No Facade)](#dependency-injection-no-facade)
+  - [Cache Price List](#cache-price-list)
+  - [Custom HTTP Settings](#custom-http-settings)
+  - [Testing & CI](#testing--ci)
+- [Security Notes](#security-notes)
+- [Performance Notes](#performance-notes)
+- [Migration from v1](#migration-from-v1)
+- [Contributors](#contributors)
 - [License](#license)
 
 ---
 
 ## Introduction
-`triyatna/digiflazz-laravel-4buyer` is a Laravel package that implements the **Digiflazz Buyer API** with safe defaults and developer‑friendly ergonomics. It covers balance, price list, deposit, prepaid, postpaid (inquiry/pay/status), PLN inquiry, and webhook verification.
+
+`triyatna/digiflazz-laravel-4buyer` is a Laravel package that implements the **Digiflazz Buyer API** with strong safety defaults, explicit response‑code mapping, and clean developer ergonomics. It covers **Balance**, **Price List**, **Deposit**, **Prepaid Topup**, **Postpaid (Inquiry/Payment/Status)**, **PLN Inquiry**, and **Webhook verification**. It supports **Laravel** version 8+ (recommended 12+).
+
+---
 
 ## Features
-- HTTP client with **timeouts** and **retries** via Laravel `Http`.
-- **Signature** generation aligned with Digiflazz docs.
-- **DTOs** for typed access to common responses.
-- **Facade** for concise calls.
-- **Webhook** controller with HMAC‑SHA1 validation (`X-Hub-Signature`).
-- Comprehensive **RC mapping** → **exceptions** for robust error handling.
-- **CI + tests** (Pest + Testbench) and PHPStan config.
-- Works on **Laravel 8 → 12**.
+
+| Area       | Details                                                                                                                                                                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core API   | Balance (`/v1/cek-saldo`), Price List (`/v1/price-list`), Deposit (`/v1/deposit`), Prepaid Topup (`/v1/transaction`), Postpaid Inquiry/Payment/Status (via `commands: inq-pasca, pay-pasca, status-pasca`), PLN Inquiry (`/v1/inquiry-pln`) |
+| Ergonomics | **Array** and **positional arguments** for most calls, Facade **and** DI interface, DTOs for typed usage                                                                                                                                    |
+| Safety     | RC→Exception mapping, MD5 signature helper (per spec), **Webhook Validator** (HMAC‑SHA1 `X‑Hub‑Signature` + IP allowlist) + middleware alias                                                                                                |
+| HTTP       | Laravel `Http` client with **timeouts** and **retries**, JSON‑only headers                                                                                                                                                                  |
+| Tooling    | CI (GitHub Actions), Pest tests (unit/feature), PHPStan                                                                                                                                                                                     |
+| Docs       | Full README, **env installer** command, examples you can paste into your project                                                                                                                                                            |
+
+---
 
 ## Why This Library
-- Production‑ready defaults to reduce operational risk.
-- Minimal boilerplate: call via Facade or inject the client interface.
-- Clear exceptions make it easy to implement compensating actions and user messaging.
-- Flexible: use raw arrays or DTOs.
+
+- **Safe by default**: timeouts, retries, strict JSON parsing, secure webhook validation.
+- **Predictable**: exceptions are mapped from Digiflazz **RC** codes.
+- **Ergonomic**: quick positional calls or full array payloads when you need control.
+- **Production‑ready**: CI + tests + static analysis included.
+- **Flexible**: Facade or DI; DTOs optional; fits Laravel 12 + Vue Starter Kits.
+
+---
+
+## Comparison with v1
+
+| Area           | v1                                                                    | v2 (this package)                                                               |
+| -------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| API coverage   | Balance, Price List, Deposit, Prepaid, Postpaid (inq/pay/status), PLN | Same coverage                                                                   |
+| Developer API  | Mainly positional + helpers                                           | **Array + Positional** on most methods                                          |
+| Error Handling | Response flags/handler                                                | **RC→Exception mapping**: Pending/Timeout/Validation/CutOff/RateLimited/etc.    |
+| DTOs           | –                                                                     | **BalanceDto**, **TransactionDto**, **PriceItemDto**                            |
+| Webhook        | Basic signature sample                                                | **Middleware** `digiflazz.webhook` + **WebhookValidator** (IP allowlist + HMAC) |
+| Config/ENV     | Basic                                                                 | Config publish + **env installer** (`digiflazz:install-env`)                    |
+| Quality        | –                                                                     | **CI** (GitHub Actions), **Pest** tests, **PHPStan**                            |
+| DI             | Mostly Facade                                                         | **Facade + Interface** for DI/testing                                           |
+
+> Migrating from v1? Replace `createPrepaidTransaction()` with `topupPrepaid()`, and convert response‑flag checks into try/catch for specific exceptions.
+
+---
 
 ## Requirements
-- PHP **^8.0**
-- Laravel **8–12**
+
+- PHP: **^8.0**
+- Laravel: **8, 9, 10, 11, 12**
+
+---
 
 ## Installation
+
 ```bash
 composer require triyatna/digiflazz-laravel-4buyer
 php artisan vendor:publish --tag=digiflazz-config
 php artisan digiflazz:install-env
 ```
-The installer ensures these keys exist in `.env` (grouped properly with spacing).
+
+---
 
 ## Configuration
-File: `config/digiflazz.php`
+
+`config/digiflazz.php` (published):
+
 ```php
 return [
     'base_url' => env('DIGIFLAZZ_BASE_URL', 'https://api.digiflazz.com/v1'),
@@ -83,86 +122,94 @@ return [
 ];
 ```
 
-## Environment Keys
-```env
+---
+
+## Environment Variables
+
+Run the installer to guarantee the keys exist (grouped with proper spacing):
+
+```bash
+php artisan digiflazz:install-env
+```
+
+**Required**
+
+```
 DIGIFLAZZ_USERNAME=
 DIGIFLAZZ_API_KEY=
 DIGIFLAZZ_WEBHOOK_SECRET=
-# Optional overrides:
-# DIGIFLAZZ_BASE_URL=https://api.digiflazz.com/v1
-# DIGIFLAZZ_HTTP_TIMEOUT=15
-# DIGIFLAZZ_HTTP_RETRY_TIMES=2
-# DIGIFLAZZ_HTTP_RETRY_SLEEP_MS=200
 ```
-Keep your API key out of source control. Use secure secrets handling in CI/CD.
 
-## Security Considerations
-- All endpoints use **POST** with `application/json`.
-- **Signature rules**: MD5 over concatenation per Digiflazz docs (e.g., `username + apiKey + ref_id`).
-- **Webhook** validation: HMAC‑SHA1 of raw body vs `X-Hub-Signature`. Set `DIGIFLAZZ_WEBHOOK_SECRET`.
-- Digiflazz recommends whitelisting **`52.74.250.133`** on their side.
-- Always log and audit your own transaction table; never rely on third‑party state alone.
+**Optional overrides**
 
-## Response Codes → Exceptions
-Selected mappings (non‑exhaustive):
-- `00` success
-- `03` → `PendingException`
-- `01`, `70` → `TimeoutException`
-- `40`, `57`, `84` → `ValidationException`
-- `41` → `InvalidSignatureException`
-- `44` → `InsufficientBalanceException`
-- `49` → `DuplicateRefIdException`
-- `50`, `60` → `NotFoundException`
-- `53`, `68`, `55`, `71`, `56` → `ProductUnavailableException`
-- `58`, `66` → `CutOffException`
-- `83`, `85`, `86` → `RateLimitedException`
-Any other RC → `DigiflazzException` including RC in the message.
+```
+DIGIFLAZZ_BASE_URL=https://api.digiflazz.com/v1
+DIGIFLAZZ_HTTP_TIMEOUT=15
+DIGIFLAZZ_HTTP_RETRY_TIMES=2
+DIGIFLAZZ_HTTP_RETRY_SLEEP_MS=200
+```
 
 ---
 
 ## Usage
 
-### Check Balance
 ```php
 use Triyatna\DigiflazzBuyer\Facades\Digiflazz;
-
-$balanceRaw = Digiflazz::checkBalance();
 ```
 
-### Price List (Prepaid/Pasca)
+### Check Balance
+
 ```php
-$prepaid = Digiflazz::priceList(['cmd' => 'prepaid']);
-$pasca   = Digiflazz::priceList(['cmd' => 'pasca']);
+$balanceRaw = Digiflazz::checkBalance();
+$balanceDto = Digiflazz::checkBalanceDto(); // ->deposit, ->hold
+```
+
+### Price List
+
+```php
+// positional-like by string + filters
+$prepaid = Digiflazz::priceList('prepaid', ['brand' => 'TELKOMSEL']);
+// full array
+$pasca   = Digiflazz::priceList(['cmd' => 'pasca', 'brand' => 'PLN']);
 ```
 
 ### Deposit
+
 ```php
+// positional
+$deposit = Digiflazz::deposit(1000000, 'BCA', 'Your Name');
+// array
 $deposit = Digiflazz::deposit([
-  'amount' => 2000000,
-  'bank' => 'BCA',
+  'amount'     => 1000000,
+  'bank'       => 'BCA',
   'owner_name' => 'Your Name',
 ]);
 ```
 
 ### Prepaid Topup
-Positional:
+
 ```php
-$tx = Digiflazz::topupPrepaid('SKU123', '08123456789', 'INV-2025-0001');
-```
-Array:
-```php
+// positional
+$tx = Digiflazz::topupPrepaid('SKU123', '08123456789', 'INV-2025-0001', [
+  'max_price' => 15000,
+  // 'testing' => true,
+]);
+
+// array
 $tx = Digiflazz::topupPrepaid([
   'buyer_sku_code' => 'SKU123',
   'customer_no' => '08123456789',
   'ref_id' => 'INV-2025-0001',
-  // 'max_price' => 15000,
-  // 'testing' => true,
 ]);
 ```
-If RC is not `00`, an exception is thrown per mapping above.
 
-### Postpaid Inquiry
+### Postpaid — Inquiry
+
 ```php
+// positional
+$inq = Digiflazz::inquiryPostpaid('PASCABPJS', '000123456789', 'INV-2025-0002');
+
+// array
 $inq = Digiflazz::inquiryPostpaid([
   'buyer_sku_code' => 'PASCABPJS',
   'customer_no' => '000123456789',
@@ -170,17 +217,23 @@ $inq = Digiflazz::inquiryPostpaid([
 ]);
 ```
 
-### Postpaid Payment
+### Postpaid — Payment
+
 ```php
+$pay = Digiflazz::payPostpaid('PASCABPJS', '000123456789', 'INV-2025-0002');
+// or
 $pay = Digiflazz::payPostpaid([
   'buyer_sku_code' => 'PASCABPJS',
   'customer_no' => '000123456789',
-  'ref_id' => 'INV-2025-0002', // must be same as inquiry
+  'ref_id' => 'INV-2025-0002',
 ]);
 ```
 
-### Postpaid Status
+### Postpaid — Status
+
 ```php
+$status = Digiflazz::statusPostpaid('PASCABPJS', '000123456789', 'INV-2025-0002');
+// or
 $status = Digiflazz::statusPostpaid([
   'buyer_sku_code' => 'PASCABPJS',
   'customer_no' => '000123456789',
@@ -189,122 +242,122 @@ $status = Digiflazz::statusPostpaid([
 ```
 
 ### PLN Inquiry
+
 ```php
-$pln = Digiflazz::inquiryPln('12345678901');
+$pln = Digiflazz::inquiryPln('12345678901');               // positional
+$pln = Digiflazz::inquiryPln(['customer_no' => '123...']); // array
 ```
 
----
+### Webhook Verification (Validator + Middleware)
 
-## Webhook
-Route:
+The package ships a **validator** and a **middleware alias** to secure your webhook endpoint with **IP allowlist** and **HMAC‑SHA1 signature** checks.
+
+**1) Route with middleware**
+
 ```php
+use Illuminate\Support\Facades\Route;
 use Triyatna\DigiflazzBuyer\Http\Controllers\WebhookController;
 
-Route::post('/digiflazz/webhook', WebhookController::class)->name('digiflazz.webhook');
+Route::post('/digiflazz/webhook', WebhookController::class)
+    ->middleware('digiflazz.webhook') // IP whitelist + X-Hub-Signature HMAC verification
+    ->name('digiflazz.webhook');
 ```
-- Set `DIGIFLAZZ_WEBHOOK_SECRET` to enable signature validation.
-- Headers read: `X-Digiflazz-Event`, `X-Hub-Signature`.
-- Controller returns `200 OK` when valid. Log payloads and act on events in your domain layer.
 
----
+**2) Configure security**
+`config/digiflazz.php`
 
-## DTOs
+```php
+'ip_whitelist'   => ['52.74.250.133'], // [] to disable IP check
+'webhook_secret' => env('DIGIFLAZZ_WEBHOOK_SECRET', ''),
+```
+
+`.env`
+
+```
+DIGIFLAZZ_WEBHOOK_SECRET=your_webhook_secret
+```
+
+**3) Custom controller (optional)**
+
+```php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class DigiflazzWebhookController
+{
+    public function __invoke(Request $request): Response
+    {
+        // Passed IP + signature checks by middleware
+        $event   = $request->header('X-DGflazz-Event', $request->header('X-Digiflazz-Event', ''));
+        $payload = $request->all();
+
+        $ref     = data_get($payload, 'data.ref_id');
+        $status  = data_get($payload, 'data.status');  // Sukses/Gagal/Pending
+        $rc      = data_get($payload, 'data.rc');
+        $message = data_get($payload, 'data.message');
+
+        // Update your transaction here...
+        return new Response('OK', 200);
+    }
+}
+```
+
+Route with the same middleware:
+
+```php
+Route::post('/digiflazz/webhook', \App\Http\Controllers\DigiflazzWebhookController::class)
+    ->middleware('digiflazz.webhook')
+    ->name('digiflazz.webhook');
+```
+
+**4) Troubleshooting & tips**
+
+- Ensure **Trusted Proxies** are configured if you run behind a reverse proxy so `request()->ip()` is correct.
+- Log `request()->getContent()` and the headers for failed validations to debug mismatches.
+- Keep the route outside CSRF/session middleware groups.
+
+### DTOs
+
 ```php
 use Triyatna\DigiflazzBuyer\Http\Client\DigiflazzClientInterface;
 
 /** @var DigiflazzClientInterface $client */
 $client = app(DigiflazzClientInterface::class);
 
-$balanceDto = $client->checkBalanceDto();
-// $balanceDto->deposit
-
-$txDto = $client->topupPrepaidDto('SKU123', '08123456789', 'INV-2025-0001');
-// $txDto->refId, $txDto->status, $txDto->rc, $txDto->message
+$balance = $client->checkBalanceDto(); // BalanceDto
+$tx      = $client->topupPrepaidDto('SKU123', '08123456789', 'INV-2025-0001'); // TransactionDto
 ```
 
 ---
 
-## Caching & Performance
-- **Price list**: cache by `cmd` and filters. Set a TTL suitable for your business (many sellers refresh periodically).
-- **HTTP**: adjust `DIGIFLAZZ_HTTP_TIMEOUT`, `DIGIFLAZZ_HTTP_RETRY_*` for your environment.
-- **Idempotency**: always generate unique `ref_id`. For prepaid status, repeat `transaction` with the **same** `ref_id` (Digiflazz pattern). For postpaid, use `status-pasca`.
+## Response Codes & Exceptions
+
+Common mappings (non‑exhaustive):
+
+|       RC | Message                      | Throws                         | Transaction Created |
+| -------: | ---------------------------- | ------------------------------ | :-----------------: |
+|       00 | Transaksi Sukses             | –                              |          ✔          |
+|       01 | Timeout                      | `TimeoutException`             |          ✔          |
+|       03 | Transaksi Pending            | `PendingException`             |          ✔          |
+|       40 | Payload Error                | `ValidationException`          |          ✖          |
+|       41 | Signature tidak valid        | `InvalidSignatureException`    |          ✖          |
+|       44 | Saldo tidak cukup            | `InsufficientBalanceException` |          ✖          |
+|       49 | Ref ID tidak unik            | `DuplicateRefIdException`      |          ✖          |
+|       50 | Transaksi Tidak Ditemukan    | `NotFoundException`            |          ✔          |
+|       53 | Produk Seller Tidak Tersedia | `ProductUnavailableException`  |          ✔          |
+|       58 | Sedang Cut Off               | `CutOffException`              |          ✔          |
+|       70 | Timeout dari Biller          | `TimeoutException`             |          ✔          |
+| 83/85/86 | Rate limiting                | `RateLimitedException`         |          ±          |
+
+Any other code → `DigiflazzException` with original message + RC.
 
 ---
 
-## Testing & CI
-- **Pest** tests included:
-  - Signature generation
-  - RC→exception mapping
-  - DTO creation
-  - Env installer insertion
-- **GitHub Actions** workflow at `.github/workflows/ci.yml` runs Pest + PHPStan.
-- Run locally:
-```bash
-composer install
-composer test
-composer analyse
-```
+## Advanced Usage
 
----
-
-## Troubleshooting
-- *`Invalid signature`*: verify `DIGIFLAZZ_USERNAME`/`DIGIFLAZZ_API_KEY` and correct `sign` formula per endpoint.
-- *`Ref ID not unique`*: ensure `ref_id` uniqueness in your system.
-- *`Insufficient balance`*: top up seller balance or implement wallet checks before hitting API.
-- *`Product unavailable` / `Cut off`*: catch exceptions and display user‑friendly messages; offer alternatives.
-- *`Timeout/Pending`*: implement retry/backoff and delayed status checks as needed.
-
----
-
-## Versioning & Support Matrix
-- Package tracks Laravel LTS and current stable.
-- Supported: Laravel **8, 9, 10, 11, 12**.
-- PHP **^8.0** minimum.
-
----
-
-## Sources
-- Digiflazz Buyer API: preparation, cek saldo, price list, deposit, transaction (prepaid/postpaid), PLN inquiry, webhook, response codes.
-
----
-
-## License
-MIT
-
-
-### Webhook Middleware
-Add security by attaching the package middleware:
-```php
-use Illuminate\Support\Facades\Route;
-use Triyatna\DigiflazzBuyer\Http\Controllers\WebhookController;
-
-Route::post('/digiflazz/webhook', WebhookController::class)
-    ->middleware('digiflazz.webhook')
-    ->name('digiflazz.webhook');
-```
-It enforces IP whitelist (if configured) and `X-Hub-Signature` validation (when `DIGIFLAZZ_WEBHOOK_SECRET` is set).
-
-
-## Flexible calls
-You can call methods with `[]` or with no arguments when safe defaults exist:
-- `Digiflazz::priceList()` or `Digiflazz::priceList([])` → defaults to `cmd=prepaid`
-- Methods that **require** fields (e.g., `deposit`, `inquiryPostpaid`, `payPostpaid`, `statusPostpaid`, `topupPrepaid`) will throw a `ValidationException` if no required fields are passed.
-
-Examples:
-```php
-$prepaid = Digiflazz::priceList();    // OK
-$prepaid2 = Digiflazz::priceList([]); // OK
-
-Digiflazz::deposit();                 // throws ValidationException
-Digiflazz::inquiryPostpaid();         // throws ValidationException
-
-Digiflazz::topupPrepaid('SKU', '081...', 'INV-1'); // OK
-Digiflazz::topupPrepaid();                           // throws ValidationException
-```
-
-
-## Flexible calling styles
-You can pass **arrays** or use **positional arguments**:
+### Flexible Calling Styles
 
 ```php
 // Price list
@@ -314,14 +367,89 @@ Digiflazz::priceList(['cmd' => 'pasca', 'brand' => 'PLN']);
 // Deposit
 Digiflazz::deposit(2500000, 'BCA', 'Your Name');
 Digiflazz::deposit(['amount' => 2500000, 'bank' => 'BCA', 'owner_name' => 'Your Name']);
-
-// Prepaid
-Digiflazz::topupPrepaid('SKU123', '08123456789', 'INV-1', ['max_price' => 15000]);
-Digiflazz::topupPrepaid(['buyer_sku_code' => 'SKU123', 'customer_no' => '08123456789', 'ref_id' => 'INV-1']);
-
-// Postpaid
-Digiflazz::inquiryPostpaid('PASCABPJS', '000123456789', 'INV-2');
-Digiflazz::payPostpaid('PASCABPJS', '000123456789', 'INV-2');
-Digiflazz::statusPostpaid('PASCABPJS', '000123456789', 'INV-2');
 ```
 
+### Dependency Injection (No Facade)
+
+```php
+namespace App\Services;
+
+use Triyatna\DigiflazzBuyer\Http\Client\DigiflazzClientInterface;
+
+class TopupService
+{
+    public function __construct(private DigiflazzClientInterface $client) {}
+
+    public function topup(string $sku, string $msisdn, string $ref, array $options = []): array
+    {
+        return $this->client->topupPrepaid($sku, $msisdn, $ref, $options);
+    }
+}
+```
+
+### Cache Price List
+
+```php
+use Illuminate\Support\Facades\Cache;
+use Triyatna\DigiflazzBuyer\Facades\Digiflazz;
+
+$prices = Cache::remember('digiflazz:pricelist:prepaid', 300, function () {
+    return Digiflazz::priceList('prepaid');
+});
+```
+
+### Custom HTTP Settings
+
+`.env`
+
+```
+DIGIFLAZZ_HTTP_TIMEOUT=20
+DIGIFLAZZ_HTTP_RETRY_TIMES=3
+DIGIFLAZZ_HTTP_RETRY_SLEEP_MS=300
+```
+
+### Testing & CI
+
+- Run tests: `composer test`
+- Static analysis: `composer analyse`
+- CI workflow: `.github/workflows/ci.yml` (Pest + PHPStan)
+
+---
+
+## Security Notes
+
+- Keep `DIGIFLAZZ_API_KEY` and `DIGIFLAZZ_WEBHOOK_SECRET` private.
+- Use the middleware `digiflazz.webhook` to ensure signature + IP checks.
+- Consider restricting webhook routes at your reverse proxy as well.
+
+## Performance Notes
+
+- Short timeouts + retries improve resilience.
+- Cache `price-list` results.
+- Use queues for heavy post‑processing after webhook events.
+
+---
+
+## Migration from v1
+
+| v1 Call                                                     | v2 Equivalent                                                                           |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `createPrepaidTransaction($sku, $msisdn, $ref, $opts = [])` | `topupPrepaid($sku, $msisdn, $ref, $opts)`                                              |
+| `getPriceList('prepaid', $filters = [])`                    | `priceList('prepaid', $filters)`                                                        |
+| `checkTransactionStatus([...])`                             | `statusPostpaid([...])` (postpaid) or re‑hit `transaction` with same `ref_id` (prepaid) |
+| Webhook sample with manual checks                           | Route middleware `digiflazz.webhook` + `WebhookValidator`                               |
+
+Change response handling from a flags‑style object to **try/catch** using the mapped exceptions.
+
+---
+
+## Contributors
+
+- **[@triyatna](https://github.com/triyatna)** — creator & maintainer
+  Contributions are welcome. Please open issues with clear repro steps and propose focused PRs. Don't forget to star and fork
+
+---
+
+## License
+
+This package is released under the [MIT License](LICENSE).
