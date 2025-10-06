@@ -1,3 +1,5 @@
+<?php
+
 return [
     'base_url' => env('DIGIFLAZZ_BASE_URL', 'https://api.digiflazz.com/v1'),
     'username' => env('DIGIFLAZZ_USERNAME', ''),
