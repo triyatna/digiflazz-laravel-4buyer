@@ -1,0 +1,54 @@
+{
+  "name": "triyatna/digiflazz-laravel-4buyer",
+  "description": "Modern, safe, and feature-rich Digiflazz Buyer API client for Laravel (v8 - v12).",
+  "keywords": [
+    "digiflazz",
+    "buyer",
+    "laravel",
+    "payment",
+    "topup",
+    "prepaid",
+    "postpaid",
+    "pln",
+    "webhook"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "homepage": "https://github.com/triyatna/digiflazz-laravel-4buyer",
+  "authors": [
+    {
+      "name": "Tri Yatna",
+      "email": "triyatna.dev@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.0",
+    "ext-json": "*",
+    "illuminate/support": "^8.0|^9.0|^10.0|^11.0|^12.0",
+    "illuminate/http": "^8.0|^9.0|^10.0|^11.0|^12.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^7.0|^8.0|^9.0|^10.0",
+    "pestphp/pest": "^2.34",
+    "pestphp/pest-plugin-laravel": "^2.4",
+    "phpstan/phpstan": "^1.11"
+  },
+  "autoload": {
+    "psr-4": {
+      "Triyatna\\DigiflazzBuyer\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Triyatna\\DigiflazzBuyer\\DigiflazzServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "scripts": {
+    "test": "pest",
+    "analyse": "phpstan analyse --memory-limit=512M"
+  }
+}
